@@ -1,7 +1,8 @@
 # Is-it-Real
 ## Author
-Yizhe Zhao
+YZJ Group:
 
+Yizhe Zhao
 Zhao Jin
 ## Description
 This is the repo for kaggle competition "Real or Not? NLP with Disaster Tweets".
