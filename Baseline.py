@@ -62,12 +62,21 @@ def remove_punc(text):
     table = str.maketrans('', '', string.punctuation)
     return text.translate(table)
 
+def token(text):
+    tknzr = TweetTokenizer(strip_handles=True, reduce_len=True)
+    words = [word for word in tknzr.tokenize(text) \
+            if ((word not in stop_words) and \
+                (word.isalpha() is True))]
+    return ' '.join(words)
+    
+
 def textClean(df):
     df['text'] = df['text'].apply(lambda text: html.unescape(text))
     df['text'] = df['text'].str.lower()
     df['text'] = df['text'].apply(lambda text: remove_URL(text))
     df['text'] = df['text'].apply(lambda text: remove_html(text))
     df['text'] = df['text'].apply(lambda text: remove_punc(text))
+    df['text'] = df['text'].apply(lambda text: token(text))
     return df
 
 train = textClean(train)
@@ -75,12 +84,9 @@ test = textClean(test)
 
 #%%
 def buildCorpus(df):
-    tknzr = TweetTokenizer()
     corpus = []
     for tweet in df['text']:
-        words = [word for word in tknzr.tokenize(tweet) \
-                if ((word not in stop_words) and \
-                    (word.isalpha() is True))]
+        words = [word for word in tweet.split()]
         corpus.append(words)
     return corpus
 
@@ -137,4 +143,16 @@ trainValY = np.array(pd.read_csv('nlp-getting-started/train.csv')['target'])
 XtrainVal = 
 
 #%%
-np.array(train_handcraft)
+text1 = '@remy: This is waaaaayyyy too much for you!!!!!!'
+text2 = '@Jason god, good, gooooooooood, goooooddd'
+tknzr = TweetTokenizer(strip_handles=True, reduce_len=True)
+print(tknzr.tokenize(text1))
+print(tknzr.tokenize(text2))
+goodVec = embedding_dict['good']
+gooodVec = embedding_dict['goood']
+
+np.sum(np.multiply(goodVec, gooodVec))/(np.linalg.norm(goodVec)*np.linalg.norm(gooodVec))
+
+
+#%%
+train_corpus[515]
