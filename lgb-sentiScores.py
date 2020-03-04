@@ -85,6 +85,15 @@ train = textClean(train)
 test = textClean(test)
 
 #%%
+# load cleaned data
+train = pd.read_csv('cleaned_data/clean_train_v2.csv')
+test = pd.read_csv('cleaned_data/clean_test_v2.csv')
+target = train["target"]
+train.drop(['id','keyword','location','target'], axis=1, inplace=True)
+test.drop(['id','keyword','location'], axis=1, inplace=True)
+ytest = np.array(pd.read_csv('nlp-getting-started/gt_test.csv')['target'])
+
+#%%
 # build corpus (list of words of each tweet) from cleaned data 
 def buildCorpus(df):
     corpus = []
@@ -100,7 +109,7 @@ test_corpus = buildCorpus(test)
 #%% 
 # embedding words using pretrained 100d-GloVec
 embedding_dict = {}
-with open('glove.twitter.27B/glove.twitter.27B.200d.txt', encoding='utf8') as f:
+with open('glove.twitter.27B/glove.twitter.27B.100d.txt', encoding='utf8') as f:
     for line in f:
         #line = line.encode('utf-8')
         values = line.split()
@@ -110,16 +119,6 @@ with open('glove.twitter.27B/glove.twitter.27B.200d.txt', encoding='utf8') as f:
         vec = np.array(values[1:], dtype='float32')
         embedding_dict[word] = vec
 
-#%%
-punctuation_dict = {}
-with open('glove.twitter.27B/glove.twitter.27B.100d.txt', encoding='utf8') as f:
-    for line in f:
-        values = line.split()
-        word = values[0].replace('<','').replace('>','')
-        if word not in string.punctuation:
-            continue
-        vec = np.array(values[1:], dtype='float32')
-        punctuation_dict[word] = vec
 
 #%%
 def buildDataset(corpus, dic=embedding_dict, vec_length=100, padding_length=25):
@@ -138,12 +137,17 @@ def buildDataset(corpus, dic=embedding_dict, vec_length=100, padding_length=25):
 
 trainValWordFeat = buildDataset(train_corpus, embedding_dict, vec_length=100)
 testWordFeat = buildDataset(test_corpus, embedding_dict, vec_length=100)
-            
+
+#%%
+# load sentiment info
+trainSenti = np.load('trainSenti.npy')
+testSenti = np.load('testSenti.npy')
+
 #%%
 # Try flat feature/ feature prepare/ train validation split
 YTrainVal = np.array(pd.read_csv('nlp-getting-started/train.csv')['target'])
-XTrainVal = np.hstack((trainValWordFeat.reshape(train_handcraft.shape[0],-1), np.array(train_handcraft)))
-Xtest = np.hstack((testWordFeat.reshape(test_handcraft.shape[0],-1), np.array(test_handcraft)))
+XTrainVal = np.hstack((trainValWordFeat.reshape(train_handcraft.shape[0],-1), np.array(train_handcraft), trainSenti))
+Xtest = np.hstack((testWordFeat.reshape(test_handcraft.shape[0],-1), np.array(test_handcraft), testSenti))
 Xtrain, Xval, ytrain, yval = train_test_split(XTrainVal, YTrainVal, test_size=0.15)
 
 
@@ -157,7 +161,7 @@ params = {"learning_rate": 0.05,
           "colsample_bytree": 0.5,
          "min_data_in_leaf": 50,
          "bagging_seed": 42,
-          "lambda_l2": 0.0001,
+          "lambda_l2": 0.001,
          "metric": "binary_logloss",
          "random_state": 42}
 

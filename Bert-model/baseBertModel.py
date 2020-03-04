@@ -31,7 +31,6 @@ test['text'] = test['text'].apply(lambda tw: eval(tw))
 #%%
 # load pretrained model from BERT
 bertTknzr = BertTokenizer.from_pretrained('bert-base-uncased')
-#%%
 bertModel = BertModel.from_pretrained('bert-base-uncased')
 
 #%%
@@ -108,6 +107,18 @@ training_dataset = Dataset(Xtrain[0], Xtrain[1], ytrain)
 val_dataset = Dataset(Xval[0], Xval[1], yval)
 
 #%%
+def checkLossVal(model):
+    lossSum = 0.0
+    cnt = 0
+    for tokens, masks, target in valLoader:
+        y_pre = model(tokens.long(), masks.long())
+        loss = criterion(y_pre, torch.LongTensor(target))
+        lossSum += loss.item()
+        cnt += 1
+        break
+    return lossSum/cnt
+
+#%%
 class model_1(torch.nn.Module):
     def __init__(self, bert):
         super(model_1, self).__init__()
@@ -132,18 +143,6 @@ max_iter = 2000
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 lossHis = []
 valHis = []
-
-#%%
-def checkLossVal(model):
-    lossSum = 0.0
-    cnt = 0
-    for tokens, masks, target in valLoader:
-        y_pre = model(tokens.long(), masks.long())
-        loss = criterion(y_pre, torch.LongTensor(target))
-        lossSum += loss.item()
-        cnt += 1
-        break
-    return lossSum/cnt
 
 #%%
 for t in tqdm(range(max_iter)):
